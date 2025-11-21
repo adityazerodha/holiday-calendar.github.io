@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSE Holiday Calendar - Live</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .year-selector {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .year-selector h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .calendar-grid {
+            padding: 30px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .holiday-item {
+            display: flex;
+            padding: 16px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .holiday-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #667eea;
+        }
+
+        .date-box {
+            min-width: 80px;
+            text-align: center;
+            padding-right: 20px;
+            border-right: 2px solid #f0f0f0;
+        }
+
+        .date-day {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            line-height: 1;
+        }
+
+        .date-month {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .holiday-details {
+            flex: 1;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .holiday-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .holiday-weekday {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .weekend-tag {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+        }
+
+        .export-section {
+            padding: 20px 30px;
+            background: #fff;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .export-btn.copy {
+            background: #48bb78;
+        }
+
+        .export-btn.copy:hover {
+            background: #38a169;
+        }
+
+        .last-updated {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .last-updated strong {
+            color: #333;
+        }
+
+        .info-section {
+            padding: 20px 30px;
+            background: #f9f9f9;
+            border-top: 1px solid #e5e5e5;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .info-section ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .info-section li {
+            padding: 5px 0;
+        }
+
+        .info-section li::before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .year-selector {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .date-box {
+                min-width: 60px;
+            }
+
+            .date-day {
+                font-size: 24px;
+            }
+
+            .holiday-item {
+                padding: 12px;
+            }
+
+            .export-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NSE Trading Holiday Calendar</h1>
+            <p>Capital & Debt Market Segments - Live Data</p>
+        </div>
+        
+        <div class="year-selector">
+            <h2 id="yearDisplay">Loading...</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Holidays</button>
+                <button class="filter-btn" data-filter="weekday">Weekdays Only</button>
+                <button class="filter-btn" data-filter="weekend">Weekends Only</button>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="loading">Fetching live data from NSE India</div>
+        </div>
+
+        <div class="export-section">
+            <div class="last-updated" id="lastUpdated">
+                <strong>Status:</strong> Loading...
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="export-btn" id="downloadJson">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download JSON
+                </button>
+                <button class="export-btn copy" id="copyJson">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy JSON
+                </button>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <strong>About:</strong>
+            <ul>
+                <li>Live data fetched directly from NSE India API</li>
+                <li>Saturdays and Sundays are automatically added</li>
+                <li>Download or copy JSON for use in your applications</li>
+                <li>Data updates automatically when NSE updates their calendar</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let globalHolidayData = null;
+
+        // Utility functions
+        function getOrdinalSuffix(day) {
+            if (day > 3 && day < 21) return 'th';
+            switch (day % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        }
+
+        function formatDisplayDate(date, description) {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            
+            const day = date.getDate();
+            const monthName = months[date.getMonth()];
+            const year = date.getFullYear();
+            const weekday = days[date.getDay()];
+            const ordinal = getOrdinalSuffix(day);
+            
+            return {
+                display: `${day}${ordinal} ${monthName} ${year}`,
+                weekday: weekday,
+                description: description || weekday,
+                day: day,
+                month: monthName.substring(0, 3),
+                year: year,
+                isWeekend: date.getDay() === 0 || date.getDay() === 6
+            };
+        }
+
+        // Fetch holidays from local JSON file (updated by GitHub Actions)
+        async function fetchHolidays() {
+            try {
+                const response = await fetch('holidays.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load holidays.json');
+                }
+                const data = await response.json();
+                console.log('✓ Loaded holidays data');
+                return data;
+            } catch (error) {
+                console.error('Error loading holidays:', error);
+                throw error;
+            }
+        }
+
+        // Process holidays from JSON data
+        function processHolidays(jsonData) {
+            const holidays = [];
+            
+            // Convert JSON data to display format
+            jsonData.holidays.forEach(isoDate => {
+                const date = new Date(isoDate + 'T00:00:00');
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                
+                // Find if it's a trading holiday
+                const tradingHoliday = jsonData.tradingHolidays.find(th => th.date === isoDate);
+                const description = tradingHoliday ? tradingHoliday.description : dayName;
+                
+                const formatted = formatDisplayDate(date, description);
+                holidays.push({
+                    isoDate: isoDate,
+                    ...formatted
+                });
+            });
+
+            return {
+                year: jsonData.year,
+                holidays: holidays,
+                generated: jsonData.generated
+            };
+        }
+
+        // Render holidays in UI
+        function renderHolidays(holidays, filter = 'all') {
+            const grid = document.getElementById('calendarGrid');
+            
+            let filteredHolidays = holidays;
+            if (filter === 'weekday') {
+                filteredHolidays = holidays.filter(h => !h.isWeekend);
+            } else if (filter === 'weekend') {
+                filteredHolidays = holidays.filter(h => h.isWeekend);
+            }
+
+            if (filteredHolidays.length === 0) {
+                grid.innerHTML = '<div class="error">No holidays found for the selected filter.</div>';
+                return;
+            }
+
+            grid.innerHTML = filteredHolidays.map(holiday => `
+                <div class="holiday-item">
+                    <div class="date-box">
+                        <div class="date-day">${holiday.day}</div>
+                        <div class="date-month">${holiday.month}</div>
+                    </div>
+                    <div class="holiday-details">
+                        <div class="holiday-name">${holiday.description}</div>
+                        <div class="holiday-weekday">
+                            ${holiday.display} - ${holiday.weekday}
+                            ${holiday.isWeekend ? '<span class="weekend-tag">Weekend</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Download JSON
+        function downloadJSON(data) {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nse-holidays-${data.year}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Copy JSON to clipboard
+        async function copyJSON(data) {
+            const json = JSON.stringify(data, null, 2);
+            try {
+                await navigator.clipboard.writeText(json);
+                const btn = document.getElementById('copyJson');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+            } catch (err) {
+                alert('JSON copied to clipboard!');
+            }
+        }
+
+        // Initialize
+        async function init() {
+            try {
+                // Fetch from local JSON file
+                const jsonData = await fetchHolidays();
+                
+                // Process for display
+                const processedData = processHolidays(jsonData);
+                const { year, holidays, generated } = processedData;
+
+                // Update year display
+                document.getElementById('yearDisplay').textContent = `Year ${year}`;
+                
+                // Store global data
+                globalHolidayData = jsonData;
+
+                // Render holidays
+                renderHolidays(holidays);
+
+                // Update status
+                const genDate = new Date(generated);
+                document.getElementById('lastUpdated').innerHTML = 
+                    `<strong>Last Updated:</strong> ${genDate.toLocaleString()}`;
+
+                // Log JSON to console
+                console.log('Holiday JSON:');
+                console.log(JSON.stringify(jsonData, null, 2));
+
+                // Setup export buttons
+                document.getElementById('downloadJson').addEventListener('click', () => {
+                    downloadJSON(jsonData);
+                });
+
+                document.getElementById('copyJson').addEventListener('click', () => {
+                    copyJSON(jsonData);
+                });
+
+                // Setup filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        renderHolidays(holidays, this.dataset.filter);
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('calendarGrid').innerHTML = 
+                    `<div class="error">
+                        <h3>Unable to load data</h3>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px; font-size: 12px;">Please check console for details.</p>
+                    </div>`;
+                document.getElementById('lastUpdated').innerHTML = 
+                    `<strong>Status:</strong> <span style="color: #e74c3c;">Failed to load</span>`;
+            }
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
