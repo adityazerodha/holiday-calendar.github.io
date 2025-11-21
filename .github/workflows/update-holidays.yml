@@ -1,0 +1,151 @@
+name: Update NSE Holidays
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [ main ]
+
+jobs:
+  update-holidays:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Fetch NSE holidays and generate JSON
+      run: |
+        node << 'EOF'
+        const https = require('https');
+        const fs = require('fs');
+
+        // Fetch from NSE API
+        async function fetchNSEData() {
+          return new Promise((resolve, reject) => {
+            const options = {
+              hostname: 'www.nseindia.com',
+              path: '/api/holiday-master?type=trading',
+              method: 'GET',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json',
+                'Accept-Language': 'en-US,en;q=0.9',
+              }
+            };
+
+            https.get(options, (res) => {
+              let data = '';
+              res.on('data', chunk => data += chunk);
+              res.on('end', () => {
+                try {
+                  resolve(JSON.parse(data));
+                } catch(e) {
+                  reject(e);
+                }
+              });
+            }).on('error', reject);
+          });
+        }
+
+        function parseNSEDate(dateStr) {
+          const months = {
+            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+          };
+          const parts = dateStr.split('-');
+          return new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
+        }
+
+        function getAllWeekends(year) {
+          const weekends = [];
+          const date = new Date(year, 0, 1);
+          
+          while (date.getFullYear() === year) {
+            if (date.getDay() === 0 || date.getDay() === 6) {
+              weekends.push(date.toISOString().split('T')[0]);
+            }
+            date.setDate(date.getDate() + 1);
+          }
+          return weekends;
+        }
+
+        async function main() {
+          try {
+            console.log('Fetching NSE data...');
+            const nseData = await fetchNSEData();
+            
+            if (!nseData.CBM || nseData.CBM.length === 0) {
+              throw new Error('No holiday data received');
+            }
+
+            // Get year
+            const firstDate = parseNSEDate(nseData.CBM[0].tradingDate);
+            const year = firstDate.getFullYear();
+            console.log(`Processing year: ${year}`);
+
+            // Process holidays
+            const holidayDates = new Set();
+            const tradingHolidays = [];
+
+            nseData.CBM.forEach(holiday => {
+              const date = parseNSEDate(holiday.tradingDate);
+              const isoDate = date.toISOString().split('T')[0];
+              holidayDates.add(isoDate);
+              tradingHolidays.push({
+                date: isoDate,
+                day: holiday.weekDay,
+                description: holiday.description
+              });
+            });
+
+            // Add weekends
+            const weekends = getAllWeekends(year);
+            const allHolidays = [...holidayDates];
+            weekends.forEach(weekend => {
+              if (!holidayDates.has(weekend)) {
+                allHolidays.push(weekend);
+              }
+            });
+
+            allHolidays.sort();
+
+            // Create JSON
+            const output = {
+              year: year,
+              generated: new Date().toISOString(),
+              source: "NSE India API",
+              holidays: allHolidays,
+              tradingHolidays: tradingHolidays.sort((a, b) => a.date.localeCompare(b.date)),
+              totalHolidays: allHolidays.length,
+              weekendDays: weekends.length,
+              tradingHolidayDays: tradingHolidays.length
+            };
+
+            // Save to file
+            fs.writeFileSync('holidays.json', JSON.stringify(output, null, 2));
+            console.log('✓ holidays.json created successfully');
+            console.log(`Total holidays: ${output.totalHolidays}`);
+            
+          } catch (error) {
+            console.error('Error:', error.message);
+            process.exit(1);
+          }
+        }
+
+        main();
+        EOF
+        
+    - name: Commit and push if changed
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add holidays.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update holidays.json - $(date)" && git push)
