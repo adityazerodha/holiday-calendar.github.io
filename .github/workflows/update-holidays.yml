@@ -149,3 +149,5 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git add holidays.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update holidays.json - $(date)" && git push)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
