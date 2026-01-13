@@ -1,12 +1,13 @@
 {
   "year": 2026,
-  "generated": "2026-01-12T01:03:36.962Z",
+  "generated": "2026-01-13T00:56:44.064Z",
   "source": "NSE India API",
   "holidays": [
     "2026-01-03",
     "2026-01-04",
     "2026-01-10",
     "2026-01-11",
+    "2026-01-15",
     "2026-01-17",
     "2026-01-18",
     "2026-01-24",
@@ -125,6 +126,11 @@
   ],
   "tradingHolidays": [
     {
+      "date": "2026-01-15",
+      "day": "Thursday",
+      "description": "Municipal Corporation Election - Maharashtra"
+    },
+    {
       "date": "2026-01-26",
       "day": "Monday",
       "description": "Republic Day"
@@ -220,7 +226,7 @@
       "description": "Christmas"
     }
   ],
-  "totalHolidays": 119,
+  "totalHolidays": 120,
   "weekendDays": 104,
-  "tradingHolidayDays": 19
+  "tradingHolidayDays": 20
 }
