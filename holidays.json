@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generated": "2026-08-25T00:39:50.905Z",
+  "generated": "2026-08-26T00:40:16.991Z",
   "source": "NSE India API",
   "holidays": [
     "2026-01-03",
@@ -81,6 +81,7 @@
     "2026-08-16",
     "2026-08-22",
     "2026-08-23",
+    "2026-08-26",
     "2026-08-29",
     "2026-08-30",
     "2026-09-05",
@@ -191,6 +192,11 @@
       "description": "Independence Day"
     },
     {
+      "date": "2026-08-26",
+      "day": "Wednesday",
+      "description": "Id-E-Milad"
+    },
+    {
       "date": "2026-09-14",
       "day": "Monday",
       "description": "Ganesh Chaturthi"
@@ -226,7 +232,7 @@
       "description": "Christmas"
     }
   ],
-  "totalHolidays": 120,
+  "totalHolidays": 121,
   "weekendDays": 104,
-  "tradingHolidayDays": 20
+  "tradingHolidayDays": 21
 }
